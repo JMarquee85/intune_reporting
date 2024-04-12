@@ -36,17 +36,22 @@ func main() {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 
-	accessToken, err := getAzureToken(clientID, clientSecret, tenantID)
+	// Get the access token
+	accessToken, err := getAccessToken(clientID, clientSecret, tenantID)
 	if err != nil {
-		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Use accessToken to make requests	to Microsoft Graph API
-	// fmt.Fprintf(w, "Client ID: %s\n", clientID)
-	// fmt.Fprintf(w, "Tenant ID: %s\n", tenantID)
-	// fmt.Fprintf(w, "Client Secret: %s\n", clientSecret)
-	fmt.Fprintf(w, "Access Token: %s\n", accessToken)
-	fmt.Println(accessToken)
+	// Making some test calls to Graph API
+
+	body, err := makeGraphAPIRequest(accessToken, "https://graph.microsoft.com/v1.0/devices")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Print the response body
+	fmt.Println(string(body))
 
 }
