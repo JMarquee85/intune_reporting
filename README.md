@@ -22,4 +22,4 @@ CLIENT_ID=your_client_id
 CLIENT_SECRET=your_client_secret
 TENANT_ID=your_tenant_id
 
-Run `go run main.go` to start the server.
+Run `go run .` from the root directory to start the server.
