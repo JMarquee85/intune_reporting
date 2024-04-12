@@ -26,3 +26,7 @@ Clone this repository and navigate to the root directory.
 Run `go mod tidy` to install the necessary dependencies.
 
 Run `go run .` from the root directory to start the server.
+
+### Documentation and Resources
+
+[Deploying to Github Actions](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go)
