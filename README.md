@@ -21,4 +21,8 @@ CLIENT_ID=your_client_id
 CLIENT_SECRET=your_client_secret
 TENANT_ID=your_tenant_id
 
+Clone this repository and navigate to the root directory.
+
+Run `go mod tidy` to install the necessary dependencies.
+
 Run `go run .` from the root directory to start the server.
