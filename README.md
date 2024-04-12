@@ -6,8 +6,7 @@ We plan to use the Microsoft Export API to get the data, parse it and display it
 
 The web portion is written in Go.
 
-We are looking into Gorilla Mux or Chi to handle routing for the http requests.
-
+Gorilla mux is being used to handle HTTP requests:
 https://github.com/gorilla/mux
 
 ### Running the application locally
