@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -45,13 +47,22 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Making some test calls to Graph API
 
-	body, err := makeGraphAPIRequest(accessToken, "https://graph.microsoft.com/v1.0/devices")
+	body, err := makeGraphAPIRequest(accessToken, "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=1")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Print the response body
-	fmt.Println(string(body))
+	// Print the response body (Pretty print it so that it's more readable)
+	var prettyJSON bytes.Buffer
+	err = json.Indent(&prettyJSON, body, "", "\t")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// fmt.Println(string(body))
+
+	// Print this stuff in the browser
+	w.Write(prettyJSON.Bytes())
 
 }
