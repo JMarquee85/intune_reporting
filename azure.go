@@ -3,20 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 )
 
-type AzureTokenResponse struct {
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	ExtExpiresIn int    `json:"ext_expires_in"`
-	AccessToken  string `json:"access_token"`
-}
-
-func getAzureToken(clientID string, clientSecret string, tenantID string) (string, error) {
+func getAzureToken(clientID string, clientSecret string, tenantID string) (string, time.Time, error) {
 	requestURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantID)
 
 	data := url.Values{}
@@ -28,28 +22,30 @@ func getAzureToken(clientID string, clientSecret string, tenantID string) (strin
 	resp, err := http.PostForm(requestURL, data)
 	if err != nil {
 		log.Printf("Error making HTTP request: %v", err)
-		return "", err
+		return "", time.Time{}, err
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Error reading response body: %v", err)
-		return "", err
+		return "", time.Time{}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("HTTP response status: %s", resp.Status)
 		log.Printf("HTTP response body: %s", string(body))
-		return "", fmt.Errorf("HTTP request failed with status %s", resp.Status)
+		return "", time.Time{}, fmt.Errorf("HTTP request failed with status %s", resp.Status)
 	}
 
 	var tokenResponse AzureTokenResponse
 	err = json.Unmarshal(body, &tokenResponse)
 	if err != nil {
 		log.Printf("Error unmarshalling response body: %v", err)
-		return "", err
+		return "", time.Time{}, err
 	}
 
-	return tokenResponse.AccessToken, nil
+	// fmt.Printf("Access token: %s\n", tokenResponse.AccessToken)
+
+	return tokenResponse.AccessToken, expiryTime, nil
 }

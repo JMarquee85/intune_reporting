@@ -101,3 +101,15 @@ This is a Windows365 Cloud PC.
 }
 ]
 }
+
+### Graph SDK
+
+https://github.com/microsoftgraph/msgraph-sdk-go
+
+In order to enable use of the SDK, Allow public client flows must be set to yes in the App Registration.
+
+https://gist.github.com/nikhita/432436d570b89cab172dcf2894465753
+
+https://learn.microsoft.com/en-us/graph/sdks/create-requests?tabs=go
+
+https://learn.microsoft.com/en-us/graph/api/overview?view=graph-rest-1.0

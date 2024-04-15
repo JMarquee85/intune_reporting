@@ -3,17 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
-func getAccessToken(clientID, clientSecret, tenantID string) (string, error) {
-	accessToken, err := getAzureToken(clientID, clientSecret, tenantID)
+func GetAccessToken(clientID, clientSecret, tenantID string) (string, time.Time, error) {
+	accessToken, expiryTime, err := getAzureToken(clientID, clientSecret, tenantID)
 	if err != nil {
-		return "", fmt.Errorf("failed to get access token: %w", err)
+		return "", time.Time{}, fmt.Errorf("failed to get access token: %w", err)
 	}
-	return accessToken, nil
+	return accessToken, expiryTime, nil
 }
 func makeGraphAPIRequest(accessToken, url string) ([]byte, error) {
 	req, err := http.NewRequest("GET", url, nil)
@@ -29,7 +30,7 @@ func makeGraphAPIRequest(accessToken, url string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
