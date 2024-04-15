@@ -45,6 +45,8 @@ func getAzureToken(clientID string, clientSecret string, tenantID string) (strin
 		return "", time.Time{}, err
 	}
 
+	expiryTime := time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second)
+
 	// fmt.Printf("Access token: %s\n", tokenResponse.AccessToken)
 
 	return tokenResponse.AccessToken, expiryTime, nil

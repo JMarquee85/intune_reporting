@@ -6,15 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
 	// Create a new instance of mux router
 	r := mux.NewRouter()

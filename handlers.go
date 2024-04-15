@@ -2,9 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 var clientID string
@@ -12,6 +16,11 @@ var tenantID string
 var clientSecret string
 
 func init() {
+	// Load environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	clientID = os.Getenv("CLIENT_ID")
 	tenantID = os.Getenv("TENANT_ID")
 	clientSecret = os.Getenv("CLIENT_SECRET")
@@ -23,15 +32,22 @@ var (
 )
 
 func ensureAccessToken() error {
+	// print expiry time
+	fmt.Printf("Current time: %s\n", time.Now())
+	fmt.Printf("Token expiry time: %s\n", expiryTime)
+
 	if time.Now().After(expiryTime) {
 		var err error
 		accessToken, expiryTime, err = getAzureToken(clientID, clientSecret, tenantID)
 		if err != nil {
+			log.Printf("Error getting access token: %v", err)
 			return err
 		}
+		log.Printf("Successfully refreshed access token.")
+	} else {
+		log.Printf("Access token is still valid.")
 	}
 	return nil
-
 }
 
 // HomeHandler is the handler for the home route
@@ -43,9 +59,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 func deviceTest(w http.ResponseWriter, r *http.Request) {
 	err := ensureAccessToken()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
 		return
 	}
+
+	// w.Write([]byte("This is the device test handler!"))
 
 	// Get All Devices
 	var allDevices []DeviceInfo
