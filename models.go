@@ -9,10 +9,26 @@ type DeviceInfoWrapper struct {
 
 // Struct for devices returned from homeHandler
 type DeviceInfo struct {
-	UserID           string `json:"userId"`
-	DeviceName       string `json:"deviceName"`
-	OperatingSystem  string `json:"operatingSystem"`
-	EnrolledDateTime string `json:"enrolledDateTime"`
+	ID                     string `json:"id"`
+	DeviceId               string `json:"deviceId"`
+	DeviceDisplayName      string `json:"displayName"`
+	EnrollmentProfileName  string `json:"enrollmentProfileName"`
+	EnrollmentType         string `json:"enrollmentType"`
+	IsCompliant            bool   `json:"isCompliant"`
+	IsManaged              bool   `json:"isManaged"`
+	Manufacturer           string `json:"manufacturer"`
+	MDMAppId               string `json:"mdmAppId"`
+	Model                  string `json:"model"`
+	ProfileType            string `json:"profileType"`
+	RegistrationDateTime   string `json:"registrationDateTime"`
+	LastSignInDateTime     string `json:"approximateLastSignInDateTime"`
+	UserID                 string `json:"userId"`
+	DeviceName             string `json:"deviceName"`
+	DeviceCategory         string `json:"deviceCategory"`
+	OperatingSystem        string `json:"operatingSystem"`
+	OperatingSystemVersion string `json:"operatingSystemVersion"`
+	CreatedDateTime        string `json:"createdDateTime"`
+	EnrolledDateTime       string `json:"enrolledDateTime"`
 }
 
 type Response struct {

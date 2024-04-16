@@ -35,74 +35,7 @@ Run `go run .` from the root directory to start the server.
 
 `https://graph.microsoft.com/v1.0/deviceManagement/managedDevices`
 
-This is a Windows365 Cloud PC.
-
-{
-"@odata.context": "https://graph.microsoft.com/v1.0/$metadata#deviceManagement/managedDevices",
-"@odata.count": 1,
-"@odata.nextLink": "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=1&$skiptoken=LastDeviceName%3d%27CPC-achak-A17OZ%27%2cLastDeviceId%3d%279b5ca08f-2311-4164-b725-2d29609b35f2%27",
-"value": [
-{
-"id": "9b5ca08f-2311-4164-b725-2d29609b35f2",
-"userId": "",
-"deviceName": "CPC-achak-A17OZ",
-"managedDeviceOwnerType": "company",
-"enrolledDateTime": "2023-12-14T18:05:18Z",
-"lastSyncDateTime": "2024-04-13T20:23:18Z",
-"operatingSystem": "Windows",
-"complianceState": "noncompliant",
-"jailBroken": "Unknown",
-"managementAgent": "mdm",
-"osVersion": "10.0.19044.3693",
-"easActivated": false,
-"easDeviceId": "",
-"easActivationDateTime": "0001-01-01T00:00:00Z",
-"azureADRegistered": true,
-"deviceEnrollmentType": "windowsAzureADJoin",
-"activationLockBypassCode": null,
-"emailAddress": "",
-"azureADDeviceId": "21fa9ef6-f319-4ee2-8c87-097e34eeada7",
-"deviceRegistrationState": "registered",
-"deviceCategoryDisplayName": "Unknown",
-"isSupervised": false,
-"exchangeLastSuccessfulSyncDateTime": "0001-01-01T00:00:00Z",
-"exchangeAccessState": "none",
-"exchangeAccessStateReason": "none",
-"remoteAssistanceSessionUrl": null,
-"remoteAssistanceSessionErrorDetails": null,
-"isEncrypted": false,
-"userPrincipalName": "",
-"model": "Cloud PC Enterprise 2vCPU/4GB/128GB",
-"manufacturer": "Microsoft Corporation",
-"imei": "",
-"complianceGracePeriodExpirationDateTime": "2023-12-28T22:01:08Z",
-"serialNumber": "0000-0014-0657-8375-4585-0309-11",
-"phoneNumber": "",
-"androidSecurityPatchLevel": "",
-"userDisplayName": "",
-"configurationManagerClientEnabledFeatures": null,
-"wiFiMacAddress": "",
-"deviceHealthAttestationState": null,
-"subscriberCarrier": "",
-"meid": "",
-"totalStorageSpaceInBytes": 136844410880,
-"freeStorageSpaceInBytes": 110705508352,
-"managedDeviceName": "21fa9ef6-f319-4ee2-8c87-097e34eeada7_Windows_12/14/2023_6:05 PM",
-"partnerReportedThreatState": "unknown",
-"requireUserEnrollmentApproval": null,
-"managementCertificateExpirationDate": "2024-12-11T06:59:05Z",
-"iccid": null,
-"udid": null,
-"notes": null,
-"ethernetMacAddress": null,
-"physicalMemoryInBytes": 0,
-"enrollmentProfileName": null,
-"deviceActionResults": []
-}
-]
-}
-
-### Graph SDK
+### Resources and Links
 
 https://github.com/microsoftgraph/msgraph-sdk-go
 
@@ -113,3 +46,9 @@ https://gist.github.com/nikhita/432436d570b89cab172dcf2894465753
 https://learn.microsoft.com/en-us/graph/sdks/create-requests?tabs=go
 
 https://learn.microsoft.com/en-us/graph/api/overview?view=graph-rest-1.0
+
+https://github.com/go-echarts/examples
+
+https://github.com/go-echarts/go-echarts
+
+https://go-echarts.github.io/go-echarts/#/
