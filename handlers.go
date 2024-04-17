@@ -141,8 +141,7 @@ func enrollmentsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Filter for Android and iOS devices enrolled in the last seven days
-	// Temporarily changed to 300 days for testing purposes
-	sevenDaysAgo := time.Now().Add(-300 * 24 * time.Hour)
+	sevenDaysAgo := time.Now().Add(7 * 24 * time.Hour)
 	var androidEnrollDates []time.Time
 	var iOSEnrollDates []time.Time
 
