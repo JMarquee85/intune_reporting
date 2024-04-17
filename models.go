@@ -1,5 +1,7 @@
 package main
 
+import "html/template"
+
 // DeviceInfo Wrapper
 // The JSON response information is nested inside a value field
 type DeviceInfoWrapper struct {
@@ -40,4 +42,10 @@ type AzureTokenResponse struct {
 	ExpiresIn    int    `json:"expires_in"`
 	ExtExpiresIn int    `json:"ext_expires_in"`
 	AccessToken  string `json:"access_token"`
+}
+
+type PageData struct {
+	Title   string
+	Header  string
+	Content template.HTML
 }

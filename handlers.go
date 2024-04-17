@@ -3,14 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/go-echarts/v2/components"
-	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/joho/godotenv"
 )
 
@@ -141,103 +139,113 @@ func enrollmentsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Filter for Android and iOS devices enrolled in the last seven days
-	sevenDaysAgo := time.Now().Add(7 * 24 * time.Hour)
-	var androidEnrollDates []time.Time
-	var iOSEnrollDates []time.Time
-
-	for _, device := range allDevices {
-		enrolledDateTime, err := time.Parse(time.RFC3339, device.EnrolledDateTime)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if enrolledDateTime.After(sevenDaysAgo) {
-			if device.OperatingSystem == "Android" {
-				androidEnrollDates = append(androidEnrollDates, enrolledDateTime)
-			} else if device.OperatingSystem == "iOS" {
-				iOSEnrollDates = append(iOSEnrollDates, enrolledDateTime)
-			}
-		}
-	}
-
-	androidEnrollmentCount := len(androidEnrollDates)
-	iOSEnrollmentCount := len(iOSEnrollDates)
-	log.Printf("Found %d Android enrollments in the last seven days", androidEnrollmentCount)
-	log.Printf("Found %d iOS enrollments in the last seven days", iOSEnrollmentCount)
-
-	w.Write([]byte(fmt.Sprintf("Found %d Android and %d iOS enrollments in the last seven days", androidEnrollmentCount, iOSEnrollmentCount)))
-
-	// Add a couple line breaks
-	w.Write([]byte("<br><br>"))
-
-	// Attempting a line graph demo
-	// Create a new line instance
-	line := charts.NewLine()
-
-	// Prepare the data
-	androidData := make([]opts.LineData, 0)
-	iOSData := make([]opts.LineData, 0)
-	xAxisLabels := make([]string, 0)
-
-	// Calculate the number of weeks to display
-	numWeeks := 10 // change this to the number of weeks you want to display
-
-	for i := 0; i < numWeeks; i++ {
-		// Calculate the start and end of the week
-		startOfWeek := time.Now().AddDate(0, 0, -7*i).Format("2006-01-02")
-		endOfWeek := time.Now().AddDate(0, 0, -7*(i+1)).Format("2006-01-02")
-
-		// Add the week to the X-axis labels
-		xAxisLabels = append([]string{startOfWeek + " to " + endOfWeek}, xAxisLabels...)
-
-		// Count the number of enrollments for the week
-		androidCount := 0
-		iOSCount := 0
-		for _, date := range androidEnrollDates {
-			if date.After(time.Now().AddDate(0, 0, -7*(i+1))) && date.Before(time.Now().AddDate(0, 0, -7*i)) {
-				androidCount++
-			}
-		}
-		for _, date := range iOSEnrollDates {
-			if date.After(time.Now().AddDate(0, 0, -7*(i+1))) && date.Before(time.Now().AddDate(0, 0, -7*i)) {
-				iOSCount++
-			}
-		}
-
-		// Add the counts to the data
-		androidData = append([]opts.LineData{{Value: androidCount}}, androidData...)
-		iOSData = append([]opts.LineData{{Value: iOSCount}}, iOSData...)
-	}
-
-	// Set the options
-	line.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{
-			Title: "Enrollment Trends",
-		}),
-		charts.WithTooltipOpts(opts.Tooltip{
-			Show: true,
-		}),
-		charts.WithXAxisOpts(opts.XAxis{
-			Type: "category",
-		}),
-		charts.WithYAxisOpts(opts.YAxis{
-			Type: "value",
-		}),
-	)
-
-	// Add the data
-	line.SetXAxis(xAxisLabels).
-		AddSeries("Android", androidData).
-		AddSeries("iOS", iOSData)
-
-	// Render the chart
-	page := components.NewPage()
-	page.AddCharts(line)
-	err = page.Render(w)
+	androidEnrollDates, iOSEnrollDates, err := filterEnrollments(allDevices)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Create graph of enrollments
+	renderIntuneEnrollmentGraph(w, androidEnrollDates, iOSEnrollDates)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func migrationAssistantHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("templates/template.html"))
+
+	// Add high device check. Offer to remove oldest devices if over 10.
+
+	data := PageData{
+		Title:  "Marriott Intune Mobile Migration Assistant",
+		Header: "Marriott Intune Mobile Migration Assistant",
+		Content: template.HTML(`
+        This tool will help you migrate your mobile devices from Workspace ONE to Microsoft Intune.<br><br>
+        <form id="eidForm" action="/migrationp1" method="post">
+            Please enter your EID:<br>
+            <input type="text" id="eidInput" name="EID"><br>
+            <button type="button" id="submitBtn">Submit</button>
+            <div id="loadingIcon" style="display: none;">Loading...</div>
+        </form>
+        <script>
+	document.getElementById('submitBtn').addEventListener('click', function(event) {
+    event.preventDefault();
+
+    document.getElementById('loadingIcon').style.display = 'block';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/migrationp1', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+        if (this.status == 200) {
+            var response = JSON.parse(this.responseText);
+            console.log(response.message);
+            if (response.success) {
+                window.location.href = '/migrationp2';
+            } else {
+                // Display error message
+            }
+        }
+        document.getElementById('loadingIcon').style.display = 'none';
+    };
+    xhr.send('EID=' + encodeURIComponent(document.getElementById('eidInput').value));
+});
+</script>
+        `),
+	}
+
+	tmpl.Execute(w, data)
+}
+
+func migrationP1Handler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	eid := r.FormValue("EID")
+
+	// Here we will look for registered iOS or Android devices in Workspace ONE
+	// Instead of printing the message below, we will do the stuff.
+
+	success := false // Set this to true or false based on whether the operation was successful
+
+	response := map[string]interface{}{
+		"message": fmt.Sprintf("Will check here for registrations in WorkspaceOne related to user: %s", eid),
+		"success": success,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func migrationP2Handler(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("templates/template.html"))
+
+	data := PageData{
+		Title:  "Marriott Intune Mobile Migration Assistant",
+		Header: "Marriott Intune Mobile Migration Assistant",
+		Content: template.HTML(`
+		<p>Migration Assistant Step 2</p>
+		`),
+	}
+
+	tmpl.Execute(w, data)
+}
+
+func workspaceOneFailedHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("templates/template.html"))
+
+	data := PageData{
+		Title:  "Marriott Intune Mobile Migration Assistant",
+		Header: "Marriott Intune Mobile Migration Assistant",
+		Content: template.HTML(`
+		The Workspace ONE migration process failed. Please contact your IT department for assistance.
+		`),
+	}
+
+	tmpl.Execute(w, data)
 }
