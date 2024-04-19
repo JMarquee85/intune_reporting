@@ -6,26 +6,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"time"
-
-	"github.com/joho/godotenv"
 )
-
-var clientID string
-var tenantID string
-var clientSecret string
-
-func init() {
-	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	clientID = os.Getenv("CLIENT_ID")
-	tenantID = os.Getenv("TENANT_ID")
-	clientSecret = os.Getenv("CLIENT_SECRET")
-}
 
 var (
 	accessToken string
@@ -64,12 +46,11 @@ func deviceTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// w.Write([]byte("This is the device test handler!"))
-
 	// Get All Devices
 	var allDevices []DeviceInfo
 
-	apiURL := "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=1"
+	apiURL := "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices"
+	// This should handle pagination
 	for apiURL != "" {
 		body, err := makeGraphAPIRequest(accessToken, apiURL)
 		if err != nil {
@@ -101,11 +82,7 @@ func deviceTest(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
-func testHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("This is a test handler!"))
-}
-
-func enrollmentsHandler(w http.ResponseWriter, r *http.Request) {
+func reportingHandler(w http.ResponseWriter, r *http.Request) {
 	// Set header as HTML
 	w.Header().Set("Content-Type", "text/html")
 
@@ -145,95 +122,35 @@ func enrollmentsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create graph of enrollments
+	// Intune Enrollment Line Graph
 	renderIntuneEnrollmentGraph(w, androidEnrollDates, iOSEnrollDates)
+
+	// Feeding this dummy data
+	// Will later call functions getUserCountIntuneGroup to get the actual numbers
+	intuneData := [3]int{100, 200, 300}
+	workspaceOneData := [3]int{150, 250, 400}
+
+	// Stacked Bar All Regions
+	err = renderBarChart(w, "All Regions Device Comparison\n", intuneData, workspaceOneData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-}
-
-func migrationAssistantHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("templates/template.html"))
-
-	// Add high device check. Offer to remove oldest devices if over 10.
-
-	data := PageData{
-		Title:  "Marriott Intune Mobile Migration Assistant",
-		Header: "Marriott Intune Mobile Migration Assistant",
-		Content: template.HTML(`
-        This tool will help you migrate your mobile devices from Workspace ONE to Microsoft Intune.<br><br>
-        <form id="eidForm" action="/migrationp1" method="post">
-            Please enter your EID:<br>
-            <input type="text" id="eidInput" name="EID"><br>
-            <button type="button" id="submitBtn">Submit</button>
-            <div id="loadingIcon" style="display: none;">Loading...</div>
-        </form>
-        <script>
-	document.getElementById('submitBtn').addEventListener('click', function(event) {
-    event.preventDefault();
-
-    document.getElementById('loadingIcon').style.display = 'block';
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/migrationp1', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onload = function() {
-        if (this.status == 200) {
-            var response = JSON.parse(this.responseText);
-            console.log(response.message);
-            if (response.success) {
-                window.location.href = '/migrationp2';
-            } else {
-                // Display error message
-            }
-        }
-        document.getElementById('loadingIcon').style.display = 'none';
-    };
-    xhr.send('EID=' + encodeURIComponent(document.getElementById('eidInput').value));
-});
-</script>
-        `),
-	}
-
-	tmpl.Execute(w, data)
-}
-
-func migrationP1Handler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	// Stacked Bar AMER
+	err = renderBarChart(w, "AMER Device Comparison\n", intuneData, workspaceOneData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	eid := r.FormValue("EID")
-
-	// Here we will look for registered iOS or Android devices in Workspace ONE
-	// Instead of printing the message below, we will do the stuff.
-
-	success := false // Set this to true or false based on whether the operation was successful
-
-	response := map[string]interface{}{
-		"message": fmt.Sprintf("Will check here for registrations in WorkspaceOne related to user: %s", eid),
-		"success": success,
+	// Stacked Bar EMEA
+	err = renderBarChart(w, "EMEA Device Comparison\n", intuneData, workspaceOneData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-func migrationP2Handler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("templates/template.html"))
-
-	data := PageData{
-		Title:  "Marriott Intune Mobile Migration Assistant",
-		Header: "Marriott Intune Mobile Migration Assistant",
-		Content: template.HTML(`
-		<p>Migration Assistant Step 2</p>
-		`),
-	}
-
-	tmpl.Execute(w, data)
 }
 
 func workspaceOneFailedHandler(w http.ResponseWriter, r *http.Request) {
@@ -248,4 +165,15 @@ func workspaceOneFailedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, data)
+}
+
+// WorkspaceOne API Handler Testing
+func workspaceOneHandler(w http.ResponseWriter, r *http.Request) {
+	message, err := workspaceOneAuth(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, message)
 }
