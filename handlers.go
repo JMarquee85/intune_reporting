@@ -131,21 +131,21 @@ func reportingHandler(w http.ResponseWriter, r *http.Request) {
 	workspaceOneData := [3]int{150, 250, 400}
 
 	// Stacked Bar All Regions
-	err = renderBarChart(w, "All Regions Device Comparison\n", intuneData, workspaceOneData)
+	err = renderBarChart(w, "All Regions", intuneData, workspaceOneData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Stacked Bar AMER
-	err = renderBarChart(w, "AMER Device Comparison\n", intuneData, workspaceOneData)
+	err = renderBarChart(w, "AMER", intuneData, workspaceOneData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Stacked Bar EMEA
-	err = renderBarChart(w, "EMEA Device Comparison\n", intuneData, workspaceOneData)
+	err = renderBarChart(w, "EMEA", intuneData, workspaceOneData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
