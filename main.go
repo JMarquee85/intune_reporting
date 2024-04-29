@@ -13,8 +13,11 @@ import (
 var clientID string
 var tenantID string
 var clientSecret string
-var workspaceOneUrl string
-var workspaceOneApiKey string
+var workspaceOneClientID string
+var workspaceOneClientSecret string
+var workspaceOneTokenUrl string
+
+// var workspaceOneUrl string
 
 func init() {
 	// Load environment variables from .env file
@@ -25,8 +28,11 @@ func init() {
 	clientID = os.Getenv("CLIENT_ID")
 	tenantID = os.Getenv("TENANT_ID")
 	clientSecret = os.Getenv("CLIENT_SECRET")
-	workspaceOneUrl = os.Getenv("WORKSPACE_ONE_URL")
-	workspaceOneApiKey = os.Getenv("WORKSPACE_ONE_API_KEY")
+	workspaceOneTokenUrl = os.Getenv("WORKSPACE_ONE_TOKEN_URL")
+	workspaceOneClientID = os.Getenv("WORKSPACE_ONE_CLIENT_ID")
+	workspaceOneClientSecret = os.Getenv("WORKSPACE_ONE_CLIENT_SECRET")
+	// workspaceOneUrl = os.Getenv("WORKSPACE_ONE_URL")
+
 }
 
 func main() {

@@ -1,10 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -17,57 +19,49 @@ func init() {
 	}
 }
 
-func workspaceOneAuth(w http.ResponseWriter, r *http.Request) (string, error) {
+type WorkspaceOneTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+	TokenType   string `json:"token_type"`
+	Scope       string `json:"scope"`
+}
 
-	// Help URL
-	// https://as1352.awmdm.com/api/help
-	// https://docs.vmware.com/en/VMware-Workspace-ONE-UEM/services/System_Settings_On_Prem/GUID-AWT-SYSTEM-ADVANCED-API-REST.html
-	// https://as1352.awmdm.com/api/system/info
+func getWorkspaceOneToken(clientID string, clientSecret string, workspaceOneTokenUrl string) (string, time.Time, error) {
 
-	// Test logging
-	// fmt.Printf("Workspace One URL: %v\n", workspaceOneUrl)
-	// fmt.Printf("Workspace One API Key: %v\n", workspaceOneApiKey)
+	// prepare the form data
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
 
-	req, err := http.NewRequest("GET", workspaceOneUrl, nil)
+	// make the request
+	resp, err := http.PostForm(workspaceOneTokenUrl, data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return "", err
-	}
-
-	req.Header.Set("id", workspaceOneApiKey)
-
-	// req.Header.Set("Authorization", "Bearer "+workspaceOneApiKey)
-	req.Header.Set("Accept", "application/json")
-	// req.Header.Set("Content-Length", "0")
-	req.Header.Set("Content-Type", "application/json")
-	// req.Header.Set("Host", "as1352.awmdm.com")
-	req.Header.Set("aw-tenant-code", workspaceOneApiKey)
-
-	// Print the request
-	// fmt.Printf("Request: %v\n", req)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return "", err
+		return "", time.Time{}, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Error response: %v\n", resp)
-		http.Error(w, "Workspace One authentication failed", http.StatusUnauthorized)
-		return "", err
-	}
-
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return "", err
+		log.Printf("Error reading response body: %v", err)
+		return "", time.Time{}, err
 	}
 
-	message := fmt.Sprintf("Workspace One authentication successful: %s", body)
-	// fmt.Fprint(w, message)
-	return message, nil
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("HTTP response status: %s", resp.Status)
+		log.Printf("HTTP response body: %s", string(body))
+		return "", time.Time{}, err
+	}
+
+	var tokenResponse WorkspaceOneTokenResponse
+	err = json.Unmarshal(body, &tokenResponse)
+	if err != nil {
+		log.Printf("Error unmarshalling response body: %v", err)
+		return "", time.Time{}, err
+	}
+
+	expiryTime := time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second)
+
+	return tokenResponse.AccessToken, expiryTime, nil
 
 }

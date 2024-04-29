@@ -169,11 +169,16 @@ func workspaceOneFailedHandler(w http.ResponseWriter, r *http.Request) {
 
 // WorkspaceOne API Handler Testing
 func workspaceOneHandler(w http.ResponseWriter, r *http.Request) {
-	message, err := workspaceOneAuth(w, r)
+	token, _, err := getWorkspaceOneToken(workspaceOneClientID, workspaceOneClientSecret, workspaceOneTokenUrl)
+	fmt.Println("ClientID:", workspaceOneClientID)
+	fmt.Println("ClientSecret:", workspaceOneClientSecret)
+	fmt.Println("TokenURL:", workspaceOneTokenUrl)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println("Error:", err)
 		return
 	}
 
-	fmt.Fprint(w, message)
+	// Print the Token
+	fmt.Println("Token:", token)
+
 }
