@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"time"
 )
@@ -33,10 +34,26 @@ func ensureAccessToken() error {
 	return nil
 }
 
-// HomeHandler is the handler for the home route
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+// Checks for valid WorkspaceOne token and gets another if expired
+// This and the above function could be combined into one with some kind of argument passed in to determine which token to get
+// Maybe take Azure or WorkspaceOne as an argument and add an if statement in the function to determine which token to get
+func ensureWorkspaceOneToken() error {
+	// print expiry time
+	fmt.Printf("Current time: %s\n", time.Now())
+	fmt.Printf("Token expiry time: %s\n", expiryTime)
 
-	w.Write([]byte("Welcome to the home page!"))
+	if time.Now().After(expiryTime) {
+		var err error
+		accessToken, expiryTime, err = getWorkspaceOneToken(workspaceOneClientID, workspaceOneClientSecret, workspaceOneTokenUrl)
+		if err != nil {
+			log.Printf("Error getting access token: %v", err)
+			return err
+		}
+		log.Printf("Successfully refreshed access token.")
+	} else {
+		log.Printf("Access token is still valid.")
+	}
+	return nil
 }
 
 func deviceTest(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +64,7 @@ func deviceTest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get All Devices
-	var allDevices []DeviceInfo
+	var allDevices []IntuneDeviceInfo
 
 	apiURL := "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices"
 	// This should handle pagination
@@ -58,16 +75,16 @@ func deviceTest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var deviceInfoWrapper DeviceInfoWrapper
-		err = json.Unmarshal(body, &deviceInfoWrapper)
+		var intuneDeviceInfoWrapper IntuneDeviceInfoWrapper
+		err = json.Unmarshal(body, &intuneDeviceInfoWrapper)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		allDevices = append(allDevices, deviceInfoWrapper.Value...)
+		allDevices = append(allDevices, intuneDeviceInfoWrapper.Value...)
 
-		apiURL = deviceInfoWrapper.NextLink
+		apiURL = intuneDeviceInfoWrapper.NextLink
 	}
 
 	jsonResponse, err := json.MarshalIndent(allDevices, "", "\t")
@@ -93,7 +110,7 @@ func reportingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get All Enrollments
-	var allDevices []DeviceInfo
+	var allDevices []IntuneDeviceInfo
 
 	apiURL := "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices"
 	for apiURL != "" {
@@ -103,7 +120,7 @@ func reportingHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var deviceInfoWrapper DeviceInfoWrapper
+		var deviceInfoWrapper IntuneDeviceInfoWrapper
 		err = json.Unmarshal(body, &deviceInfoWrapper)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -169,16 +186,65 @@ func workspaceOneFailedHandler(w http.ResponseWriter, r *http.Request) {
 
 // WorkspaceOne API Handler Testing
 func workspaceOneHandler(w http.ResponseWriter, r *http.Request) {
-	token, _, err := getWorkspaceOneToken(workspaceOneClientID, workspaceOneClientSecret, workspaceOneTokenUrl)
-	fmt.Println("ClientID:", workspaceOneClientID)
-	fmt.Println("ClientSecret:", workspaceOneClientSecret)
-	fmt.Println("TokenURL:", workspaceOneTokenUrl)
+
+	// Set header as HTML
+	// w.Header().Set("Content-Type", "text/html")
+
+	// Check for valid WorkspaceOne Token
+	err := ensureWorkspaceOneToken()
 	if err != nil {
-		fmt.Println("Error:", err)
+		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
 		return
 	}
 
-	// Print the Token
-	fmt.Println("Token:", token)
+	// Make a call to the WorkspaceOne API
+	apiURL := workspaceOneUrl + "/API/mdm/devices/search"
+	var allDevices []WorkspaceOneDeviceInfo
+	pageSize := 500
+	curPage := 0
 
+	for {
+		// Make a call to the WorkspaceOne API
+		body, err := makeWorkspaceOneRequest(accessToken, fmt.Sprintf("%s?page=%d&pagesize=%d", apiURL, curPage, pageSize))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Unmarshal the JSON response into a Response value
+		var resp WorkspaceOneResponse
+		err = json.Unmarshal(body, &resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		allDevices = append(allDevices, resp.Devices...)
+
+		// Check if there are more results to fetch
+		finalPage := int(math.Ceil(float64(resp.Total)/float64(pageSize))) - 1
+		if curPage >= finalPage {
+			break
+		}
+
+		// Increment the current page
+		curPage++
+	}
+
+	deviceCount := len(allDevices)
+
+	log.Printf("Found %d devices", deviceCount)
+
+	// Convert allDevices into JSON
+	jsonResponse, err := json.MarshalIndent(allDevices, "", "\t")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Set the Content-Type header to application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write jsonResponse to the HTTP response
+	w.Write(jsonResponse)
 }

@@ -1,16 +1,18 @@
 package main
 
-import "html/template"
+import (
+	"html/template"
+)
 
 // DeviceInfo Wrapper
 // The JSON response information is nested inside a value field
-type DeviceInfoWrapper struct {
-	Value    []DeviceInfo `json:"value"`
-	NextLink string       `json:"@odata.nextLink"`
+type IntuneDeviceInfoWrapper struct {
+	Value    []IntuneDeviceInfo `json:"value"`
+	NextLink string             `json:"@odata.nextLink"`
 }
 
 // Struct for devices returned from homeHandler
-type DeviceInfo struct {
+type IntuneDeviceInfo struct {
 	ID                     string `json:"id"`
 	DeviceId               string `json:"deviceId"`
 	DeviceDisplayName      string `json:"displayName"`
@@ -33,8 +35,43 @@ type DeviceInfo struct {
 	EnrolledDateTime       string `json:"enrolledDateTime"`
 }
 
+type WorkspaceOneDeviceInfo struct {
+	EasIds struct {
+		EasId []string `json:"easId"`
+	} `json:"EasIds"`
+	TimeZone           string `json:"TimeZone"`
+	Udid               string `json:"Udid"`
+	AssetNumber        string `json:"AssetNumber"`
+	DeviceFriendlyName string `json:"DeviceFriendlyName"`
+	DeviceReportedName string `json:"DeviceReportedName"`
+	LocationGroupId    struct {
+		Id struct {
+			Value int `json:"value"`
+		} `json:"Id"`
+		Name string `json:"Name"`
+		Uuid string `json:"Uuid"`
+	} `json:"LocationGroupId"`
+	LocationGroupName string `json:"LocationGroupName"`
+	UserName          string `json:"UserName"`
+	UserEmailAddress  string `json:"UserEmailAddress"`
+	Ownership         string `json:"Ownership"`
+	Platform          string `json:"Platform"`
+	OperatingSystem   string `json:"OperatingSystem"`
+	LastSeen          string `json:"LastSeen"`
+	EnrollmentStatus  string `json:"EnrollmentStatus"`
+	ComplianceStatus  string `json:"ComplianceStatus"`
+	LastEnrolledOn    string `json:"LastEnrolledOn"`
+	IsSupervised      bool   `json:"IsSupervised"`
+	EnrolledViaDEP    bool   `json:"EnrolledViaDEP"`
+}
+
 type Response struct {
-	Value []DeviceInfo `json:"value"`
+	Value []IntuneDeviceInfo `json:"value"`
+}
+
+type WorkspaceOneResponse struct {
+	Devices []WorkspaceOneDeviceInfo `json:"Devices"`
+	Total   int                      `json:"Total"`
 }
 
 type AzureTokenResponse struct {

@@ -8,6 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+
+	"github.com/jmarquee85/intune_reporting/handlers"
 )
 
 var clientID string
@@ -16,8 +18,7 @@ var clientSecret string
 var workspaceOneClientID string
 var workspaceOneClientSecret string
 var workspaceOneTokenUrl string
-
-// var workspaceOneUrl string
+var workspaceOneUrl string
 
 func init() {
 	// Load environment variables from .env file
@@ -28,10 +29,10 @@ func init() {
 	clientID = os.Getenv("CLIENT_ID")
 	tenantID = os.Getenv("TENANT_ID")
 	clientSecret = os.Getenv("CLIENT_SECRET")
-	workspaceOneTokenUrl = os.Getenv("WORKSPACE_ONE_TOKEN_URL")
-	workspaceOneClientID = os.Getenv("WORKSPACE_ONE_CLIENT_ID")
-	workspaceOneClientSecret = os.Getenv("WORKSPACE_ONE_CLIENT_SECRET")
-	// workspaceOneUrl = os.Getenv("WORKSPACE_ONE_URL")
+	workspaceOneTokenUrl = os.Getenv("WORKSPACEONE_TOKEN_URL")
+	workspaceOneClientID = os.Getenv("WORKSPACEONE_CLIENT_ID")
+	workspaceOneClientSecret = os.Getenv("WORKSPACEONE_CLIENT_SECRET")
+	workspaceOneUrl = os.Getenv("WORKSPACEONE_URL")
 
 }
 
@@ -39,7 +40,7 @@ func main() {
 
 	// Create a new instance of mux router
 	r := mux.NewRouter()
-	r.HandleFunc("/", homeHandler).Methods("GET")
+	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	r.HandleFunc("/devices", deviceTest).Methods("GET")
 	r.HandleFunc("/reports", reportingHandler).Methods("GET")
 	r.HandleFunc("/workspaceonefailed", workspaceOneFailedHandler).Methods("GET")

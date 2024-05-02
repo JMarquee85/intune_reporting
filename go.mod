@@ -1,4 +1,4 @@
-module intune_reporting
+module github.com/jmarquee85/intune_reporting
 
 go 1.18
 

@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-func filterEnrollments(allDevices []DeviceInfo) ([]time.Time, []time.Time, error) {
+func filterEnrollments(allDevices []IntuneDeviceInfo) ([]time.Time, []time.Time, error) {
 	sevenDaysAgo := time.Now().Add(7 * 24 * time.Hour)
 	var androidEnrollDates []time.Time
 	var iOSEnrollDates []time.Time

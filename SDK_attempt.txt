@@ -1,0 +1,99 @@
+///// This was an attempt to use the SDK. It will unfortunately not work at this time as I am getting an error that reads as follows:
+// Error getting devices: Unknown DeviceEnrollmentType value: androidEnterpriseCorporateWorkProfile
+// *errors.errorString > error: &errors.errorString{s:"Unknown DeviceEnrollmentType value: androidEnterpriseCorporateWorkProfile"}
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	msgraphsdk "github.com/microsoftgraph/msgraph-sdk-go"
+	"github.com/microsoftgraph/msgraph-sdk-go/models/odataerrors"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+)
+
+// var clientId string
+// var tenantId string
+// var clientSecret string
+
+func main() {
+	fmt.Println("Starting the application...")
+
+	// Load environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Create a new instance of the DeviceCodeCredential
+	// This needs to be an application instead of device login.
+	cred, err := azidentity.NewClientSecretCredential(
+		os.Getenv("TENANT_ID"),
+		os.Getenv("CLIENT_ID"),
+		os.Getenv("CLIENT_SECRET"),
+		nil,
+	)
+
+	if err != nil {
+		fmt.Printf("Error creating credentials: %v\n", err)
+	}
+
+	// Get a GraphRequestAdapter object to make requests against the service
+	client, err := msgraphsdk.NewGraphServiceClientWithCredentials(cred, []string{"https://graph.microsoft.com/.default"})
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		return
+	}
+
+	// Create a new instance of mux router
+	r := mux.NewRouter()
+
+	// Create a closure to pass the graphClient to the handler
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		homeHandler(w, r, client)
+	}).Methods("GET")
+
+	fmt.Println("Server is starting on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func homeHandler(w http.ResponseWriter, r *http.Request, client *msgraphsdk.GraphServiceClient) {
+	// Get a list of devices
+	response, err := client.DeviceManagement().ManagedDevices().Get(context.Background(), nil)
+	if err != nil {
+		fmt.Printf("Error getting devices: %v\n", err)
+		printOdataError(err)
+		return
+	}
+
+	// Write the repsonse to the console
+	fmt.Printf("%+v", response)
+
+	// Write the response to the http.ResponseWriter
+	w.Write([]byte(fmt.Sprintf("Devices: %v\n", response)))
+
+	// Iterate over the devices and write each device's details to the http.ResponseWriter
+	// for _, device := range response.ManagedDevices {
+	// 	deviceDetails := fmt.Sprintf("Device ID: %s, Device Name: %s, Operating System: %s, Operating System Version: %s\n",
+	// 		*device.DeviceID, *device.DeviceName, *device.OperatingSystem, *device.OperatingSystemVersion)
+	// 	w.Write([]byte(deviceDetails))
+	// }
+}
+
+// Omitted for brevity?!!
+
+func printOdataError(err error) {
+	switch typed := err.(type) {
+	case *odataerrors.ODataError:
+		fmt.Printf("error: %s", typed.Error())
+	default:
+		fmt.Printf("%T > error: %#v", err, err)
+	}
+}
