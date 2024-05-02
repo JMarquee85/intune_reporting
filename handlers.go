@@ -15,36 +15,23 @@ var (
 	expiryTime  time.Time
 )
 
-func ensureAccessToken() error {
-	// print expiry time
-	fmt.Printf("Current time: %s\n", time.Now())
-	fmt.Printf("Token expiry time: %s\n", expiryTime)
+// Check to see if the token is still valid in either Azure or WorkspaceOne and refresh if needed
+type TokenType int
 
+const (
+	Azure TokenType = iota
+	WorkspaceOne
+)
+
+func ensureToken(tokenType TokenType) error {
 	if time.Now().After(expiryTime) {
 		var err error
-		accessToken, expiryTime, err = getAzureToken(clientID, clientSecret, tenantID)
-		if err != nil {
-			log.Printf("Error getting access token: %v", err)
-			return err
+		switch tokenType {
+		case Azure:
+			accessToken, expiryTime, err = getAzureToken(clientID, clientSecret, tenantID)
+		case WorkspaceOne:
+			accessToken, expiryTime, err = getWorkspaceOneToken(workspaceOneClientID, workspaceOneClientSecret, workspaceOneTokenUrl)
 		}
-		log.Printf("Successfully refreshed access token.")
-	} else {
-		log.Printf("Access token is still valid.")
-	}
-	return nil
-}
-
-// Checks for valid WorkspaceOne token and gets another if expired
-// This and the above function could be combined into one with some kind of argument passed in to determine which token to get
-// Maybe take Azure or WorkspaceOne as an argument and add an if statement in the function to determine which token to get
-func ensureWorkspaceOneToken() error {
-	// print expiry time
-	fmt.Printf("Current time: %s\n", time.Now())
-	fmt.Printf("Token expiry time: %s\n", expiryTime)
-
-	if time.Now().After(expiryTime) {
-		var err error
-		accessToken, expiryTime, err = getWorkspaceOneToken(workspaceOneClientID, workspaceOneClientSecret, workspaceOneTokenUrl)
 		if err != nil {
 			log.Printf("Error getting access token: %v", err)
 			return err
@@ -57,7 +44,7 @@ func ensureWorkspaceOneToken() error {
 }
 
 func deviceTest(w http.ResponseWriter, r *http.Request) {
-	err := ensureAccessToken()
+	err := ensureToken(Azure)
 	if err != nil {
 		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
 		return
@@ -103,7 +90,7 @@ func reportingHandler(w http.ResponseWriter, r *http.Request) {
 	// Set header as HTML
 	w.Header().Set("Content-Type", "text/html")
 
-	err := ensureAccessToken()
+	err := ensureToken(Azure)
 	if err != nil {
 		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
 		return
@@ -191,7 +178,7 @@ func workspaceOneHandler(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Content-Type", "text/html")
 
 	// Check for valid WorkspaceOne Token
-	err := ensureWorkspaceOneToken()
+	err := ensureToken(WorkspaceOne)
 	if err != nil {
 		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
 		return
